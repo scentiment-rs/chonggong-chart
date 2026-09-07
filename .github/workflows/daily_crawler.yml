@@ -1,4 +1,4 @@
-STREAMING_CHUNK:Defining workflow name and triggers...
+# STREAMING_CHUNK:Defining workflow name and triggers...
 
 name: Daily DCInside Post Scraping
 
@@ -7,14 +7,14 @@ schedule:
 # KST 00:05 = UTC 15:05 (전날). Cron format: (분 시 일 월 요일)
 - cron: '5 15 * * *'
 
-GitHub 웹 UI 상단에 'Run workflow' 수동 실행 버튼을 만들어 주는 옵션입니다.
+# GitHub 웹 UI 상단에 'Run workflow' 수동 실행 버튼을 만들어 주는 옵션입니다.
 
 workflow_dispatch:
 
 permissions:
 contents: write
 
-STREAMING_CHUNK:Configuring the scraping runner job...
+# STREAMING_CHUNK:Configuring the scraping runner job...
 
 jobs:
 scrape-and-update:
