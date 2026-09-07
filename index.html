@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>리센느 미니 갤러리 일일 집계 대시보드</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Pretendard', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-200">
+          <i class="fa-solid fa-chart-line text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            리센느 미니갤 일일 게시글 트래커
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Live</span>
+          </h1>
+          <p class="text-xs text-slate-500">매일 00:05 KST 자동 집계 | 키워드: <span class="font-medium text-slate-700">리센느</span></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 self-end sm:self-auto text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+        <i class="fa-regular fa-clock text-slate-400"></i>
+        <span>마지막 업데이트:</span>
+        <span id="lastUpdated" class="font-semibold text-slate-700">-</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
+    
+    <!-- 요약 통계 카드 그리드 -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- 카드 1: 전일 게시글 -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 mb-1">어제 게시글 수</p>
+          <div class="flex items-baseline gap-2">
+            <span id="yesterdayCount" class="text-2xl font-extrabold text-slate-900">-</span>
+            <span id="yesterdayDiff" class="text-xs font-semibold"></span>
+          </div>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-calendar-day"></i>
+        </div>
+      </div>
+
+      <!-- 카드 2: 7일 평균 -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 mb-1">최근 7일 일평균</p>
+          <p id="avg7Days" class="text-2xl font-extrabold text-slate-900">-</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-chart-simple"></i>
+        </div>
+      </div>
+
+      <!-- 카드 3: 역대 최고치 -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 mb-1">최대 기록일 (Peak)</p>
+          <div class="flex flex-col">
+            <span id="peakCount" class="text-2xl font-extrabold text-slate-900">-</span>
+            <span id="peakDate" class="text-[11px] text-slate-400 font-medium">-</span>
+          </div>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-fire"></i>
+        </div>
+      </div>
+
+      <!-- 카드 4: 누적 총 게시글 -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 mb-1">누적 총 게시글 수</p>
+          <p id="totalCount" class="text-2xl font-extrabold text-slate-900">-</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-database"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-100">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">일자별 게시글 발생 추이</h2>
+          <p class="text-xs text-slate-500">선택한 기간 동안의 매일 언급량 및 게시물 수 변화</p>
+        </div>
+        
+        <!-- 기간 필터 버튼 그룹 -->
+        <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-slate-600">
+          <button onclick="setPeriod(7)" class="period-btn px-3 py-1.5 rounded-lg transition" data-days="7">7일</button>
+          <button onclick="setPeriod(14)" class="period-btn px-3 py-1.5 rounded-lg transition" data-days="14">14일</button>
+          <button onclick="setPeriod(30)" class="period-btn px-3 py-1.5 rounded-lg transition" data-days="30">30일</button>
+          <button onclick="setPeriod(0)" class="period-btn active px-3 py-1.5 rounded-lg transition bg-white text-emerald-700 shadow-sm" data-days="0">전체</button>
+        </div>
+      </div>
+
+      <!-- 차트 캔버스 영역 -->
+      <div class="relative w-full h-80 sm:h-96">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+          <i class="fa-solid fa-table-list text-slate-400"></i>
+          일자별 상세 데이터 로그
+        </h3>
+        <button id="downloadCsvBtn" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-lg transition">
+          <i class="fa-solid fa-file-arrow-down"></i>
+          CSV 내보내기
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold">
+            <tr>
+              <th class="py-3 px-6">일자</th>
+              <th class="py-3 px-6 text-right">게시글 수 (건)</th>
+              <th class="py-3 px-6 text-right">전일 대비 증감</th>
+              <th class="py-3 px-6">비율 게이지</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+            <!-- 자바스크립트로 렌더링 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 푸터 -->
+  <footer class="mt-auto py-6 border-t border-slate-200 text-center text-xs text-slate-400">
+    <p>Powered by GitHub Actions, DCInside Web Scraper & Chart.js</p>
+  </footer>
+
+  <script>
+    // 기본 모의 데이터 (data/daily_counts.json 파일이 없거나 로컬 파일 테스트 시 안전하게 폴백 동작)
+    const fallbackData = {
+      "updated_at": "2024-05-18 00:05:00",
+      "keyword": "리센느",
+      "gallery_id": "remini",
+      "records": [
+        { "date": "2024-05-08", "count": 24 },
+        { "date": "2024-05-09", "count": 31 },
+        { "date": "2024-05-10", "count": 18 },
+        { "date": "2024-05-11", "count": 45 },
+        { "date": "2024-05-12", "count": 62 },
+        { "date": "2024-05-13", "count": 55 },
+        { "date": "2024-05-14", "count": 48 },
+        { "date": "2024-05-15", "count": 73 },
+        { "date": "2024-05-16", "count": 89 },
+        { "date": "2024-05-17", "count": 64 }
+      ]
+    };
+
+    let dataset = [];
+    let myChart = null;
+    let selectedPeriod = 0; // 0: 전체
+
+    // 데이터 로드 함수 (실제 배포 시 data/daily_counts.json 에서 페치)
+    async function loadData() {
+      try {
+        const response = await fetch('./data/daily_counts.json?t=' + new Date().getTime());
+        if (!response.ok) throw new Error("JSON 파일을 찾을 수 없어 기본 모의 데이터를 표시합니다.");
+        const json = await response.json();
+        processData(json);
+      } catch (err) {
+        console.warn(err.message);
+        processData(fallbackData);
+      }
+    }
+
+    function processData(raw) {
+      document.getElementById('lastUpdated').innerText = raw.updated_at || '방금 전';
+      
+      // 날짜 오름차순 정렬
+      dataset = (raw.records || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      updateSummaryCards();
+      renderChart();
+      renderTable();
+    }
+
+    function updateSummaryCards() {
+      if (dataset.length === 0) return;
+
+      const total = dataset.reduce((acc, cur) => acc + cur.count, 0);
+      document.getElementById('totalCount').innerText = `${total.toLocaleString()}건`;
+
+      // 어제(가장 최신 데이터)와 그 전일 비교
+      const latest = dataset[dataset.length - 1];
+      const prev = dataset.length >= 2 ? dataset[dataset.length - 2] : null;
+
+      document.getElementById('yesterdayCount').innerText = `${latest.count}건`;
+      const diffElem = document.getElementById('yesterdayDiff');
+      if (prev) {
+        const diff = latest.count - prev.count;
+        if (diff > 0) {
+          diffElem.innerHTML = `<span class="text-emerald-600"><i class="fa-solid fa-arrow-up"></i> +${diff}</span>`;
+        } else if (diff < 0) {
+          diffElem.innerHTML = `<span class="text-rose-500"><i class="fa-solid fa-arrow-down"></i> ${diff}</span>`;
+        } else {
+          diffElem.innerHTML = `<span class="text-slate-400">- 0</span>`;
+        }
+      }
+
+      // 최근 7일 평균
+      const last7 = dataset.slice(-7);
+      const avg = Math.round(last7.reduce((acc, c) => acc + c.count, 0) / last7.length);
+      document.getElementById('avg7Days').innerText = `${avg}건`;
+
+      // 최대 피크일
+      const peak = dataset.reduce((max, cur) => cur.count > max.count ? cur : max, dataset[0]);
+      document.getElementById('peakCount').innerText = `${peak.count}건`;
+      document.getElementById('peakDate').innerText = `(${peak.date})`;
+    }
+
+    function setPeriod(days) {
+      selectedPeriod = days;
+      document.querySelectorAll('.period-btn').forEach(btn => {
+        if (parseInt(btn.getAttribute('data-days')) === days) {
+          btn.className = "period-btn active px-3 py-1.5 rounded-lg transition bg-white text-emerald-700 shadow-sm";
+        } else {
+          btn.className = "period-btn px-3 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900";
+        }
+      });
+      renderChart();
+      renderTable();
+    }
+
+    function getFilteredData() {
+      if (selectedPeriod === 0) return dataset;
+      return dataset.slice(-selectedPeriod);
+    }
+
+    function renderChart() {
+      const filtered = getFilteredData();
+      const labels = filtered.map(d => d.date.slice(5)); // 'MM-DD'
+      const values = filtered.map(d => d.count);
+
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      if (myChart) myChart.destroy();
+
+      // 그라데이션 영역 생성
+      const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+      gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '일일 게시글 수',
+            data: values,
+            borderColor: '#10b981',
+            backgroundColor: gradient,
+            borderWidth: 3,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#10b981',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: true,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0f172a',
+              titleFont: { size: 12, weight: 'bold' },
+              bodyFont: { size: 13 },
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (context) => ` 게시글 수: ${context.parsed.y} 건`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#64748b', font: { size: 11 } }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                color: '#64748b',
+                stepSize: 10,
+                font: { size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderTable() {
+      const filtered = [...getFilteredData()].reverse(); // 최신순
+      const tbody = document.getElementById('dataTableBody');
+      tbody.innerHTML = '';
+
+      const maxCount = Math.max(...dataset.map(d => d.count), 1);
+
+      filtered.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition";
+
+        // 전일 대비 차이 계산
+        const origIdx = dataset.findIndex(d => d.date === item.date);
+        let diffHtml = '<span class="text-slate-400">-</span>';
+        if (origIdx > 0) {
+          const prev = dataset[origIdx - 1];
+          const diff = item.count - prev.count;
+          if (diff > 0) {
+            diffHtml = `<span class="text-emerald-600 font-semibold">+${diff}</span>`;
+          } else if (diff < 0) {
+            diffHtml = `<span class="text-rose-500 font-semibold">${diff}</span>`;
+          } else {
+            diffHtml = `<span class="text-slate-400">0</span>`;
+          }
+        }
+
+        const barPercent = Math.min(100, Math.round((item.count / maxCount) * 100));
+
+        tr.innerHTML = `
+          <td class="py-3 px-6 font-semibold text-slate-800">${item.date}</td>
+          <td class="py-3 px-6 text-right font-bold text-slate-900">${item.count} 건</td>
+          <td class="py-3 px-6 text-right">${diffHtml}</td>
+          <td class="py-3 px-6">
+            <div class="w-36 bg-slate-100 rounded-full h-2.5 overflow-hidden">
+              <div class="bg-emerald-500 h-2.5 rounded-full" style="width: ${barPercent}%"></div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // CSV 다운로드 기능
+    document.getElementById('downloadCsvBtn').addEventListener('click', () => {
+      if (dataset.length === 0) return;
+      let csv = "\uFEFFDate,PostCount\n";
+      dataset.forEach(row => {
+        csv += `${row.date},${row.count}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `remini_daily_counts_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // 초기 실행
+    window.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>
