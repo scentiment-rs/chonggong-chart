@@ -2,10 +2,13 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from urllib.parse import quote
 import requests
 from bs4 import BeautifulSoup
+
+# 한국 표준시 (KST = UTC+9) 정의
+KST = timezone(timedelta(hours=9))
 
 HEADERS = {
     "User-Agent": (
@@ -26,7 +29,8 @@ def parse_article_date(date_td) -> date | None:
             pass
 
     raw_text = date_td.get_text(strip=True)
-    today = date.today()
+    # 한국 시간 기준 오늘 날짜
+    today = datetime.now(KST).date()
 
     if ":" in raw_text:
         return today
@@ -42,9 +46,6 @@ def parse_article_date(date_td) -> date | None:
     return None
 
 def count_single_day_posts(gallery_id: str, keyword: str, target_day: date, is_mini: bool = True) -> int:
-    """
-    특정 날짜(target_day) 하루 동안 발생한 게시글 수를 집계합니다.
-    """
     prefix = "mini/board/lists/" if is_mini else "board/lists/"
     base_url = f"https://gall.dcinside.com/{prefix}"
     encoded_keyword = quote(keyword.encode("utf-8"))
@@ -101,7 +102,7 @@ def count_single_day_posts(gallery_id: str, keyword: str, target_day: date, is_m
             elif post_date < target_day:
                 consecutive_outdated += 1
                 if consecutive_outdated >= 10:
-                    print(f"[{page}페이지] 대상일({target_day}) 이전 글 도달. 집계 종료.")
+                    print(f"[{page}페이지] 대상일({target_day}) 이전 글 도달. 집계 완료.")
                     return count
             else:
                 consecutive_outdated = 0
@@ -125,7 +126,6 @@ def update_json_data(data_file: str, target_day: date, count: int, gallery_id: s
         data = {"gallery_id": gallery_id, "keyword": keyword, "records": []}
 
     target_str = str(target_day)
-    # 기존 데이터 덮어쓰기 or 신규 추가
     records = data.get("records", [])
     existing = next((r for r in records if r["date"] == target_str), None)
     if existing:
@@ -133,10 +133,10 @@ def update_json_data(data_file: str, target_day: date, count: int, gallery_id: s
     else:
         records.append({"date": target_str, "count": count})
 
-    # 날짜순 정렬
     records.sort(key=lambda x: x["date"])
     data["records"] = records
-    data["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # 한국 시간 기준 타임스탬프 기록
+    data["updated_at"] = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
 
     with open(data_file, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
@@ -148,10 +148,10 @@ def main():
     keyword = "리센느미니"
     data_file = "data/daily_counts.json"
 
-    # 실행 시점 기준 "전날(어제)" 날짜 계산
-    yesterday = date.today() - timedelta(days=1)
+    # 한국 표준시(KST) 기준 어제 날짜 계산
+    now_kst = datetime.now(KST)
+    yesterday = (now_kst - timedelta(days=1)).date()
 
-    # 인자로 날짜를 강제 지정할 수도 있음 (python daily_collector.py 2024-05-17)
     if len(sys.argv) > 1:
         yesterday = datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
 
