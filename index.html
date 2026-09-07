@@ -106,7 +106,7 @@
         </div>
       </div>
 
-      <!-- 카드 4: 누적 총 게시글 -->
+      <!-- 카드 4: 누적 총 총공수 -->
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
         <div>
           <p class="text-xs font-medium text-slate-500 mb-1">누적 총공 (26.08.01~)</p>
@@ -157,7 +157,7 @@
           <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-semibold">
             <tr>
               <th class="py-3 px-6">일자</th>
-              <th class="py-3 px-6 text-right">게시글 수 (건)</th>
+              <th class="py-3 px-6 text-right">총공 수 (건)</th>
               <th class="py-3 px-6 text-right">전일 대비 증감</th>
               <th class="py-3 px-6">비율 게이지</th>
             </tr>
@@ -294,7 +294,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: '일일 게시글 수',
+            label: '일일 총공 수',
             data: values,
             borderColor: '#10b981',
             backgroundColor: gradient,
@@ -320,7 +320,7 @@
               padding: 10,
               cornerRadius: 8,
               callbacks: {
-                label: (context) => ` 게시글 수: ${context.parsed.y} 건`
+                label: (context) => ` 총공 수: ${context.parsed.y} 건`
               }
             }
           },
