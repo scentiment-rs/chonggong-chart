@@ -1,4 +1,10 @@
-name: Daily DCInside Post Scrapingon:schedule:# KST 00:05 = UTC 15:05 (전날). Cron format: (분 시 일 월 요일)- cron: '5 15 * * *'workflow_dispatch: # GitHub 웹 UI에서 수동으로 'Run workflow'를 누를 수 있도록 허용permissions:contents: writejobs:scrape-and-update:runs-on: ubuntu-lateststeps:
+name: Daily DCInside Post Scraping
+on:schedule:# KST 00:05 = UTC 15:05 (전날). Cron format: (분 시 일 월 요일)- cron: '5 15 * * *'
+workflow_dispatch: # GitHub 웹 UI에서 수동으로 'Run workflow'를 누를 수 있도록 허용
+permissions:contents: write
+jobs:scrape-and-update:runs-on: ubuntu-latest
+
+steps:
   - name: 저장소 체크아웃
     uses: actions/checkout@v4
 
