@@ -145,7 +145,7 @@ def update_json_data(data_file: str, target_day: date, count: int, gallery_id: s
 
 def main():
     gallery_id = "remini"
-    keyword = "리센느"
+    keyword = "리센느미니"
     data_file = "data/daily_counts.json"
 
     # 실행 시점 기준 "전날(어제)" 날짜 계산
