@@ -2,7 +2,9 @@ name: Daily DCInside Post Scraping
 
 on:
   schedule:
-    # KST 00:05 = UTC 15:05 (전날). Cron format: (분 시 일 월 요일)
+    # 1. KST 22:05 = UTC 13:05 (당일 데이터 1차 집계)
+    - cron: '5 13 * * *'
+    # 2. KST 00:05 = UTC 15:05 전날 (전일 데이터 최종 마감 집계)
     - cron: '5 15 * * *'
   workflow_dispatch: # GitHub 웹 UI에서 수동 실행 허용
 
