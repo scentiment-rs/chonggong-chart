@@ -145,24 +145,49 @@ def update_json_data(data_file: str, target_day: date, count: int, gallery_id: s
 
 def main():
     gallery_id = "remini"
-    keyword = "리센느미니"
+    keyword = "리센느"
     data_file = "data/daily_counts.json"
 
-    # 한국 표준시(KST) 기준 어제 날짜 계산
     now_kst = datetime.now(KST)
-    yesterday = (now_kst - timedelta(days=1)).date()
 
+    # 실행 인자 처리 및 자동 판별 로직
     if len(sys.argv) > 1:
-        yesterday = datetime.strptime(sys.argv[1], "%Y-%m-%d").date()
+        arg = sys.argv[1].strip().lower()
+        if arg == "today":
+            target_day = now_kst.date()
+            run_type = "당일 집계 (수동 옵션)"
+        elif arg == "yesterday":
+            target_day = (now_kst - timedelta(days=1)).date()
+            run_type = "전일 집계 (수동 옵션)"
+        else:
+            try:
+                target_day = datetime.strptime(arg, "%Y-%m-%d").date()
+                run_type = "지정일 집계"
+            except ValueError:
+                print(f"[오류] 잘못된 인자: '{arg}'. 'today', 'yesterday' 또는 'YYYY-MM-DD' 형식이어야 합니다.")
+                sys.exit(1)
+    else:
+        # 인자가 없을 때: KST 현재 시각 기준 자동 판별
+        # 22:05 실행 (오후/저녁) -> 당일 데이터 1차 집계
+        # 00:05 실행 (자정 직후) -> 전일 데이터 마감 집계
+        if now_kst.hour >= 12:
+            target_day = now_kst.date()
+            run_type = "당일 1차 집계 (22:05 스케줄)"
+        else:
+            target_day = (now_kst - timedelta(days=1)).date()
+            run_type = "전일 마감 집계 (00:05 스케줄)"
+
+    print(f"[실행 정보] 모드: {run_type} | 현재 시각(KST): {now_kst.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"[수집 대상일] {target_day}")
 
     count = count_single_day_posts(
         gallery_id=gallery_id,
         keyword=keyword,
-        target_day=yesterday,
+        target_day=target_day,
         is_mini=True
     )
 
-    update_json_data(data_file, yesterday, count, gallery_id, keyword)
+    update_json_data(data_file, target_day, count, gallery_id, keyword)
 
 if __name__ == "__main__":
     main()
