@@ -66,7 +66,7 @@
               >
             </h1>
             <p class="text-xs text-slate-500">
-              매일 00:05 KST 자동 집계 | 키워드:
+              매일 22:05 / 00:05 KST 자동 집계 | 키워드:
               <span class="font-medium text-slate-700">리센느미니</span>
             </p>
           </div>
@@ -85,12 +85,12 @@
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-6">
       <!-- 요약 통계 카드 그리드 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 카드 1: 전일 총공 -->
+        <!-- 카드 1: 최신 일자 총공 수 (동적 날짜 표시) -->
         <div
           class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between"
         >
           <div>
-            <p class="text-xs font-medium text-slate-500 mb-1">어제 총공 수</p>
+            <p id="latestDateLabel" class="text-xs font-medium text-slate-500 mb-1">최근 총공 수</p>
             <div class="flex items-baseline gap-2">
               <span
                 id="yesterdayCount"
@@ -346,9 +346,22 @@
           "totalCount"
         ).innerText = `${total.toLocaleString()}건`;
 
-        // 어제(가장 최신 데이터)와 그 전일 비교
+        // 가장 최신 데이터와 직전 데이터 비교
         const latest = dataset[dataset.length - 1];
         const prev = dataset.length >= 2 ? dataset[dataset.length - 2] : null;
+
+        // 최신 수집 일자에 맞춘 동적 레이블 설정 (예: 2026-09-08 -> "9월 8일 총공 수")
+        const labelElem = document.getElementById("latestDateLabel");
+        if (latest && latest.date) {
+          const parts = latest.date.split("-");
+          if (parts.length === 3) {
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            labelElem.innerText = `${month}월 ${day}일 총공 수`;
+          } else {
+            labelElem.innerText = `${latest.date} 총공 수`;
+          }
+        }
 
         document.getElementById(
           "yesterdayCount"
