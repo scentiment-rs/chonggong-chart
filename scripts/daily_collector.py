@@ -53,7 +53,9 @@ def count_single_day_posts(gallery_id: str, keyword: str, target_day: date, is_m
     session = requests.Session()
     session.headers.update(HEADERS)
 
-    count = 0
+    # 중복 수집 방지를 위한 글번호 Set
+    seen_post_ids = set()
+    matched_post_ids = set()
     page = 1
     consecutive_outdated = 0
 
@@ -84,6 +86,13 @@ def count_single_day_posts(gallery_id: str, keyword: str, target_day: date, is_m
             if not num_td or not num_td.get_text(strip=True).isdigit():
                 continue
 
+            post_id = num_td.get_text(strip=True)
+
+            # 이전 페이지에서 이미 처리된 글번호는 즉시 스킵 (중복 카운팅 방지)
+            if post_id in seen_post_ids:
+                continue
+            seen_post_ids.add(post_id)
+
             date_td = row.select_one("td.gall_date")
             if not date_td:
                 continue
@@ -103,15 +112,15 @@ def count_single_day_posts(gallery_id: str, keyword: str, target_day: date, is_m
                 consecutive_outdated += 1
                 if consecutive_outdated >= 10:
                     print(f"[{page}페이지] 대상일({target_day}) 이전 글 도달. 집계 완료.")
-                    return count
+                    return len(matched_post_ids)
             else:
                 consecutive_outdated = 0
-                count += 1
+                matched_post_ids.add(post_id)
 
         page += 1
         time.sleep(0.8)
 
-    return count
+    return len(matched_post_ids)
 
 def update_json_data(data_file: str, target_day: date, count: int, gallery_id: str, keyword: str):
     os.makedirs(os.path.dirname(data_file), exist_ok=True)
